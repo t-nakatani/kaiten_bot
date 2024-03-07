@@ -1,6 +1,8 @@
 from pandas import DataFrame
 from exchange import Exchange
 
+from utils import adjust_price, adjust_qty
+
 class TradingStrategy():
     """
     ロジックをもとに売買に関わるシグナルを作成する
@@ -11,11 +13,12 @@ class TradingStrategy():
         self.rate_of_drop = rate_of_drop
         self.rate_of_pump = rate_of_pump
         self.leverage = leverage
+        self.symbol_info = {}
     
     async def initalize_setting(self, pair_symbol: str):
-        balance_info = await self.exchange.get_balance_info('USDT')
-        usdt_balance = float(balance_info[0]['coin'][0]['availableToWithdraw'])
-        print('[TradingStrategy]-initalize_setting:', usdt_balance)
+        # cancel all existing orders
+        await self.exchange.cancel_all_orders(pair_symbol)
+
         # set leverage
         ret_msg = await self.exchange.set_leverage(pair_symbol, self.leverage)
         if ret_msg == 'OK':
@@ -23,10 +26,15 @@ class TradingStrategy():
         elif ret_msg == 'leverage not modified':
             print(f'[TradingStrategy]-initalize_setting: leverage is already {self.leverage}x')
 
+        balance_info = await self.exchange.get_balance_info('USDT')
+        usdt_balance = float(balance_info[0]['coin'][0]['availableToWithdraw'])
+        print('[TradingStrategy]-initalize_setting:', usdt_balance)
 
-        # cancel all existing orders
-        await self.exchange.cancel_all_orders(pair_symbol)
-        pass
+        self.trading_volume = min(self.trading_volume, usdt_balance * int(self.leverage)) * 0.95
+        print(f'[TradingStrategy]-initalize_setting: trading_volume is set to {self.trading_volume}')
+
+        price_tick, qty_step = await self.exchange.get_symbol_info(pair_symbol)
+        self.symbol_info = {'price_tick': price_tick, 'qty_step': qty_step}
 
     def calc_position_size(self):
         pass
@@ -61,11 +69,20 @@ class TradingStrategy():
 
     async def create_opening_order(self, pair_symbol) -> None:
         buy_price = await self.calc_buy_price(pair_symbol)
-        ret_msg = await self.exchange.create_order(pair_symbol=pair_symbol, qty='0.01', side='Buy', price=str(int(buy_price)), reduce_only=False)
+        adjusted_price = adjust_price(buy_price, self.symbol_info['price_tick'])
+        adjusted_qty = adjust_qty(self.trading_volume / buy_price, self.symbol_info['qty_step'], 0.01)
+
+        ret_msg = await self.exchange.create_order(pair_symbol=pair_symbol, qty=str(adjusted_qty), side='Buy', price=str(adjusted_price), reduce_only=False)
         if not ret_msg == 'OK':
-            print(f"Open position: {ret_msg}")
+            print(f'[TradingStrategy]-create_opening_order: {pair_symbol} {adjusted_qty} {adjusted_price} {ret_msg}')
+        return
 
     async def create_closing_order(self, pair_symbol) -> None:
         sell_price = await self.calc_sell_price(pair_symbol)
-        ret_msg = await self.exchange.create_order(pair_symbol=pair_symbol, qty='0.01', side='Sell', price=str(int(sell_price)), reduce_only=True)
-        print(f"Close position: {ret_msg}")
+        adjusted_price = adjust_price(sell_price, self.symbol_info['price_tick'])
+        adjusted_qty = adjust_qty(self.trading_volume / sell_price, self.symbol_info['qty_step'], 0.01)
+
+        ret_msg = await self.exchange.create_order(pair_symbol=pair_symbol, qty=adjusted_qty, side='Sell', price=str(adjusted_price), reduce_only=True)
+        if not ret_msg == 'OK':
+            print(f'[TradingStrategy]-create_closing_order: {pair_symbol} {adjusted_qty} {adjusted_price} {ret_msg}')
+        return

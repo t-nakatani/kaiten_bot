@@ -40,9 +40,14 @@ class Exchange():
         return orders
 
 
-    async def get_symbol_info(self):
+    async def get_symbol_info(self, pair_symbol):
         """銘柄の情報を取得"""
-        pass
+        async with self.client.get(f"/v5/market/instruments-info?category=linear&symbol={pair_symbol}") as resp:
+            content = await resp.json()
+            symbol_info = content['result']
+            price_tick = float(symbol_info['list'][0]['priceFilter']['tickSize'])
+            qty_step = float(symbol_info['list'][0]['lotSizeFilter']['qtyStep'])
+            return (price_tick, qty_step)
 
     async def get_balance_info(self, coin: str='USDT') -> float:
         """残高を取得"""

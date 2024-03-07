@@ -29,12 +29,6 @@ class KaitenBot():
                 print('current_position:', current_position)
                 break
 
-        # order = await self.trading_strategy.get_open_order(pair_symbol)
-        # if order:
-        #     print(f'There is {len(order)} orders in {pair_symbol}')
-        # else:
-        #     print(f'There is no orders in {pair_symbol}')
-
         # 2. create_order
         if current_position is None:
             # ポジションがない場合：新規ポジションを開く

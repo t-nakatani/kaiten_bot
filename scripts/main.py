@@ -13,7 +13,7 @@ apis = {
 }
 
 strategy_parmas = {
-    'trading_volume':  float(os.getenv('volume')), 
+    'trading_volume': float(os.getenv('volume')), 
     'leverage': os.getenv('leverage'),
     'rate_of_drop': float(os.getenv('rate_of_drop')),
     'rate_of_pump': float(os.getenv('rate_of_pump'))
