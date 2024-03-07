@@ -70,19 +70,16 @@ class TradingStrategy():
     async def create_opening_order(self, pair_symbol) -> None:
         buy_price = await self.calc_buy_price(pair_symbol)
         adjusted_price = adjust_price(buy_price, self.symbol_info['price_tick'])
-        adjusted_qty = adjust_qty(self.trading_volume / buy_price, self.symbol_info['qty_step'], 0.01)
+        adjusted_qty = adjust_qty(self.trading_volume / buy_price, self.symbol_info['qty_step'])
 
         ret_msg = await self.exchange.create_order(pair_symbol=pair_symbol, qty=str(adjusted_qty), side='Buy', price=str(adjusted_price), reduce_only=False)
         if not ret_msg == 'OK':
             print(f'[TradingStrategy]-create_opening_order: {pair_symbol} {adjusted_qty} {adjusted_price} {ret_msg}')
-        return
 
-    async def create_closing_order(self, pair_symbol) -> None:
+    async def create_closing_order(self, pair_symbol, opening_qty) -> None:
         sell_price = await self.calc_sell_price(pair_symbol)
         adjusted_price = adjust_price(sell_price, self.symbol_info['price_tick'])
-        adjusted_qty = adjust_qty(self.trading_volume / sell_price, self.symbol_info['qty_step'], 0.01)
 
-        ret_msg = await self.exchange.create_order(pair_symbol=pair_symbol, qty=adjusted_qty, side='Sell', price=str(adjusted_price), reduce_only=True)
+        ret_msg = await self.exchange.create_order(pair_symbol=pair_symbol, qty=str(opening_qty), side='Sell', price=str(adjusted_price), reduce_only=True)
         if not ret_msg == 'OK':
-            print(f'[TradingStrategy]-create_closing_order: {pair_symbol} {adjusted_qty} {adjusted_price} {ret_msg}')
-        return
+            print(f'[TradingStrategy]-create_closing_order: {pair_symbol} {opening_qty} {adjusted_price} {ret_msg}')

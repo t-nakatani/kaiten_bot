@@ -16,7 +16,6 @@ class KaitenBot():
         )
     
     async def run(self, pair_symbol):
-
         # 0. cancel all orders
         await self.trading_strategy.initalize_setting(pair_symbol)
 
@@ -26,7 +25,7 @@ class KaitenBot():
         for position in positions:
             if position['symbol'] == pair_symbol:
                 current_position = position
-                print('current_position:', current_position)
+                print('[KaitenBot]-run: current_position:', current_position)
                 break
 
         # 2. create_order
@@ -34,8 +33,9 @@ class KaitenBot():
             # ポジションがない場合：新規ポジションを開く
             await self.trading_strategy.create_opening_order(pair_symbol)
         else:
+            opening_qty = current_position['size']
             # ポジションがある場合：既存のポジションをクローズする
-            await self.trading_strategy.create_closing_order(pair_symbol)
+            await self.trading_strategy.create_closing_order(pair_symbol, opening_qty)
 
         order = await self.trading_strategy.get_open_order(pair_symbol)
         if order:
