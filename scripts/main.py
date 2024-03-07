@@ -19,7 +19,7 @@ strategy_parmas = {
     'rate_of_pump': float(os.getenv('rate_of_pump'))
 }
 
-pair_symbol = 'BNBUSDT'
+pair_symbol = os.getenv('pair_symbol')
 print('strategy_parmas:', strategy_parmas, '\n')
 
 async def main():
