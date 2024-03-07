@@ -2,6 +2,7 @@ import os
 import asyncio
 import pybotters
 from dotenv import load_dotenv
+from utils import get_current_time
 
 from kaiten_bot import KaitenBot
 
@@ -20,11 +21,13 @@ strategy_parmas = {
 }
 
 pair_symbol = os.getenv('pair_symbol')
-print('strategy_parmas:', strategy_parmas, '\n')
 
 async def main():
     async with pybotters.Client(apis=apis, base_url='https://api.bybit.com') as client:
+        print('strategy_parmas:', strategy_parmas, '\n')
         kaiten_bot = KaitenBot(client, strategy_parmas)
         await kaiten_bot.run(pair_symbol)
 
+print(f'==================================  {get_current_time()}  ==================================')
 asyncio.run(main())
+print('\n')

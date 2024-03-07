@@ -1,4 +1,10 @@
 import math
+import datetime
+
+def get_current_time():
+    now = datetime.datetime.now()
+    current_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    return current_time
 
 def adjust_price(price, price_tick):
     round_price = max(0, int(-math.log10(price_tick)))
